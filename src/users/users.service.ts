@@ -5,6 +5,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../database/prisma.service';
 import { applyDefaultOrder } from '../utils/default-order';
+import { HttpRequestParams } from '../interfaces/http-request-params.interface';
 
 @Injectable()
 export class UsersService {
@@ -23,10 +24,35 @@ export class UsersService {
     });
   }
 
-  findAll(): Promise<Users[]> {
-    return this.prismaService.users.findMany({
+  async findAll(
+    params: HttpRequestParams,
+  ): Promise<{ users: Users[]; total: number }> {
+    const { page, take, search } = params;
+
+    const pageNumber = +page || 1;
+    const itemsPerPage = +take || 10;
+
+    const searchFilter = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {};
+
+    const users = await this.prismaService.users.findMany({
       orderBy: applyDefaultOrder(),
+      skip: (pageNumber - 1) * itemsPerPage,
+      take: itemsPerPage,
+      where: searchFilter as any,
     });
+
+    const total = await this.prismaService.users.count({
+      where: searchFilter as any,
+    });
+
+    return { users, total };
   }
 
   findOne(id: string): Promise<Users> {

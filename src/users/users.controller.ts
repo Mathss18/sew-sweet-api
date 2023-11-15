@@ -9,6 +9,7 @@ import {
   Res,
   HttpStatus,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { UsersService } from './users.service';
@@ -16,6 +17,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { HttpReturn } from '../utils/http-response';
 import { AuthGuard } from '../auth/auth.guard';
+import { HttpRequestParams } from '../interfaces/http-request-params.interface';
 
 @UseGuards(AuthGuard)
 @Controller('users')
@@ -38,11 +40,13 @@ export class UsersController {
   }
 
   @Get()
-  async findAll(@Res() res: Response) {
+  async findAll(@Query() query: HttpRequestParams, @Res() res: Response) {
     try {
+      const { users, total } = await this.usersService.findAll(query);
       return res.status(HttpStatus.OK).json(
         HttpReturn.build({
-          data: await this.usersService.findAll(),
+          data: users,
+          total,
         }),
       );
     } catch (error) {

@@ -15,6 +15,7 @@ model Users {
   name      String
   email     String  @unique
   password  String
+  active    Boolean @default(true)
   role      String
   createdAt String?
   updatedAt String?
